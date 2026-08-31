@@ -33,7 +33,7 @@ Backoffice funcional que separa el **catálogo de productos** de un **motor de r
 
 - **Repository + Unit of Work** sobre EF Core: desacopla la lógica de negocio del proveedor de base de datos (migrar de SQLite a SQL Server requiere tocar solo la infraestructura).
 - **DTOs explícitos**: las entidades de EF Core nunca salen en los contratos de API.
-- **Comunicación REST síncrona** entre servicios: el cálculo de precio en pantalla es una lectura que necesita respuesta inmediata; la mensajería asíncrona (RabbitMQ/Kafka) quedó como roadmap.
+- **Comunicación REST síncrona** entre servicios: el cálculo de precio en pantalla es una lectura que necesita respuesta inmediata.
 - **Tolerancia a fallos**: si Pricing.API no responde, el listado de productos devuelve el precio base (sin precio enriquecido) en lugar de fallar completo.
 - **Criterio de descuento**: se aplican las reglas activas y aplicables (categoría, rango de fechas, volumen); gana la de **mayor porcentaje** de descuento. En empate, prioridad `ByVolume > ByDateRange > ByCategory` para determinismo.
 - **Seguridad**: JWT firmado con clave simétrica (`appsettings.json` → `JWT:Key`), emitido por Catalog.API, con roles `Admin` (escritura) y `Viewer` (solo lectura).
