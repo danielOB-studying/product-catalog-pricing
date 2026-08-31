@@ -15,22 +15,27 @@ var catalogConn = builder.Configuration.GetConnectionString("CatalogDb") ?? "Dat
 builder.Services.AddDbContext<AppDbContext>(options => options.UseSqlite(catalogConn));
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
+// Hashing de contraseñas (PBKDF2) para autenticación y seed.
+builder.Services.AddSingleton<IPasswordHasher, PasswordHasher>();
+
 // Cliente HTTP hacia Pricing.API (REST síncrono interno).
 var pricingBaseUrl = builder.Configuration["PricingApi:BaseUrl"] ?? "http://localhost:5002";
 builder.Services.AddHttpClient<IPricingClient, PricingClient>(client => client.BaseAddress = new Uri(pricingBaseUrl));
 
 // Autenticación / autorización con JWT emitido por este servicio.
-builder.Services.AddSingleton<JwtTokenService>();
+builder.Services.AddSingleton<IJwtTokenService, JwtTokenService>();
 var jwtKey = builder.Configuration["JWT:Key"]!;
+var jwtIssuer = builder.Configuration["JWT:Issuer"] ?? "Catalog.API";
+var jwtAudience = builder.Configuration["JWT:Audience"] ?? "catalog-backoffice";
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,
-            ValidIssuer = "Catalog.API",
+            ValidIssuer = jwtIssuer,
             ValidateAudience = true,
-            ValidAudience = "catalog-backoffice",
+            ValidAudience = jwtAudience,
             ValidateIssuerSigningKey = true,
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
             ValidateLifetime = true,
@@ -65,23 +70,27 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
-// CORS para permitir el consumo desde el frontend Angular.
-builder.Services.AddCors();
+// CORS: orígenes permitidos desde configuración (ver appsettings.json → Cors:AllowedOrigins).
+var allowedOrigins = builder.Configuration
+    .GetSection("Cors:AllowedOrigins")
+    .Get<string[]>() ?? new[] { "http://localhost:4200" };
+builder.Services.AddCors(options => options.AddPolicy("Frontend", policy => policy
+    .AllowAnyHeader()
+    .AllowAnyMethod()
+    .WithOrigins(allowedOrigins)));
 
 var app = builder.Build();
 
-// Aplica migraciones automáticas (demo) y siembra datos de desarrollo.
+// Aplica migraciones automáticas (demo) y siembra datos demo (usuarios + catálogo de ejemplo).
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    var passwordHasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher>();
     db.Database.Migrate();
-    SeedData.Run(db, true);
+    SeedData.Run(db, passwordHasher, seedDemoData: true);
 }
 
-app.UseCors(policy => policy
-    .AllowAnyHeader()
-    .AllowAnyMethod()
-    .WithOrigins("http://localhost:4200"));
+app.UseCors("Frontend");
 
 app.UseSwagger();
 app.UseSwaggerUI(ui => ui.SwaggerEndpoint("/swagger/v1/swagger.json", "Catalog.API v1"));

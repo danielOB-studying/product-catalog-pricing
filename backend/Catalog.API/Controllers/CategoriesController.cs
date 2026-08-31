@@ -1,3 +1,4 @@
+using CatalogApi.Common;
 using CatalogApi.DTOs;
 using CatalogApi.Models;
 using CatalogApi.Repositories;
@@ -9,7 +10,7 @@ namespace CatalogApi.Controllers
     /// <summary>Gestión de categorías de producto.</summary>
     [Route("api/categories")]
     [ApiController]
-    [Authorize(Roles = "Admin,Viewer")]
+    [Authorize(Roles = UserRoles.AdminOrViewer)]
     public sealed class CategoriesController : ControllerBase
     {
         private readonly IUnitOfWork _unitOfWork;
@@ -27,7 +28,7 @@ namespace CatalogApi.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = UserRoles.Admin)]
         public ActionResult<CategoryDto> Create([FromBody] CreateCategoryDto request)
         {
             if (string.IsNullOrWhiteSpace(request.Name))
@@ -39,7 +40,7 @@ namespace CatalogApi.Controllers
             _unitOfWork.Categories().Add(category);
             _unitOfWork.Save();
 
-            return StatusCode(201, ToDto(category));
+            return CreatedAtAction(nameof(GetAll), new { id = category.Id }, ToDto(category));
         }
 
         private static CategoryDto ToDto(Category category) => new()

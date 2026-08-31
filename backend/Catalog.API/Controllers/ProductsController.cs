@@ -1,3 +1,4 @@
+using CatalogApi.Common;
 using CatalogApi.DTOs;
 using CatalogApi.Models;
 using CatalogApi.Repositories;
@@ -11,7 +12,7 @@ namespace CatalogApi.Controllers
     /// <summary>Gestión de productos. El listado enriquece cada producto con el precio final calculado por Pricing.API.</summary>
     [Route("api/products")]
     [ApiController]
-    [Authorize(Roles = "Admin,Viewer")]
+    [Authorize(Roles = UserRoles.AdminOrViewer)]
     public sealed class ProductsController : ControllerBase
     {
         private readonly IUnitOfWork _unitOfWork;
@@ -38,7 +39,7 @@ namespace CatalogApi.Controllers
 
             foreach (var product in products)
             {
-                var pricing = await _pricingClient.CalculateAsync(product.Category.Name, product.BasePrice, product.Stock, now);
+                var pricing = await _pricingClient.CalculateAsync(product.Category?.Name ?? string.Empty, product.BasePrice, product.Stock, now);
                 var dto = ToDto(product);
                 result.Add(new ProductWithPriceDto
                 {
@@ -59,7 +60,7 @@ namespace CatalogApi.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = UserRoles.Admin)]
         public ActionResult<ProductDto> Create([FromBody] CreateProductDto request)
         {
             if (string.IsNullOrWhiteSpace(request.Sku) || string.IsNullOrWhiteSpace(request.Name))
@@ -85,11 +86,11 @@ namespace CatalogApi.Controllers
             _unitOfWork.Products().Add(product);
             _unitOfWork.Save();
 
-            return StatusCode(201, ToDto(product));
+            return CreatedAtAction(nameof(GetAll), new { id = product.Id }, ToDto(product));
         }
 
         [HttpPut("{id:int}")]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = UserRoles.Admin)]
         public ActionResult<ProductDto> Update(int id, [FromBody] UpdateProductDto request)
         {
             var product = _unitOfWork.Products().Find(id);
@@ -121,7 +122,7 @@ namespace CatalogApi.Controllers
         }
 
         [HttpDelete("{id:int}")]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = UserRoles.Admin)]
         public IActionResult Delete(int id)
         {
             var product = _unitOfWork.Products().Find(id);

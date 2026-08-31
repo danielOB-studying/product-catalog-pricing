@@ -13,12 +13,12 @@ namespace CatalogApi.Repositories
             _set = set;
         }
 
-        public System.Linq.IQueryable<T> Query()
+        public IQueryable<T> Query()
         {
             return _set.AsQueryable();
         }
 
-        public T? Find(object id)
+        public T? Find(int id)
         {
             return _set.Find(id);
         }

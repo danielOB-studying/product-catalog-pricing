@@ -1,7 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 using CatalogApi.Models;
-using Microsoft.EntityFrameworkCore;
+using CatalogApi.Services;
 
 namespace CatalogApi.Data
 {
@@ -12,34 +12,26 @@ namespace CatalogApi.Data
         {
         }
 
-        /// <summary>Deriva un hash PBKDF2-SHA256 (32 bytes, 100000 iteraciones) desde la contraseña en claro.</summary>
-        public static string HashPassword(string password, string salt = "catalog-salt")
-        {
-            var saltBytes = Encoding.UTF8.GetBytes(salt);
-            var derived = Rfc2898DeriveBytes.Pbkdf2(password, saltBytes, iterations: 100000, HashAlgorithmName.SHA256, outputLength: 32);
-            return Convert.ToHexString(derived);
-        }
-
-        /// <summary>Inserta los registros semilla si la base está vacía.</summary>
-        public static void Run(Data.AppDbContext context, bool isDevelopment)
+        /// <summary>Inserta los registros semilla si la base está vacía. `seedDemoData` controla el catálogo demo.</summary>
+        public static void Run(Data.AppDbContext context, IPasswordHasher passwordHasher, bool seedDemoData)
         {
             if (!context.ApplicationUsers.Any())
             {
                 context.ApplicationUsers.Add(new ApplicationUser
                 {
                     Username = "admin",
-                    PasswordHash = HashPassword("admin123"),
+                    PasswordHash = passwordHasher.Hash("admin123"),
                     Role = "Admin",
                 });
                 context.ApplicationUsers.Add(new ApplicationUser
                 {
                     Username = "viewer",
-                    PasswordHash = HashPassword("viewer123"),
+                    PasswordHash = passwordHasher.Hash("viewer123"),
                     Role = "Viewer",
                 });
             }
 
-            if (isDevelopment && !context.Categories.Any())
+            if (seedDemoData && !context.Categories.Any())
             {
                 var electronica = new Category { Name = "Electrónica", Description = "Dispositivos y accesorios electrónicos" };
                 var hogar = new Category { Name = "Hogar", Description = "Artículos para el hogar" };

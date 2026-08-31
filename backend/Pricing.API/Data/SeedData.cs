@@ -9,10 +9,10 @@ namespace PricingApi.Data
         {
         }
 
-        /// <summary>Inserta las reglas semilla si la base está vacía y es entorno de desarrollo.</summary>
-        public static void Run(Data.PricingDbContext context, bool isDevelopment)
+        /// <summary>Inserta las reglas semilla si la base está vacía. `seedDemoData` controla la siembra.</summary>
+        public static void Run(Data.PricingDbContext context, bool seedDemoData)
         {
-            if (!isDevelopment || context.PricingRules.Any())
+            if (!seedDemoData || context.PricingRules.Any())
             {
                 return;
             }

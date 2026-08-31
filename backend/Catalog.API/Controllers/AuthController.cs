@@ -1,3 +1,4 @@
+using CatalogApi.Common;
 using CatalogApi.Data;
 using CatalogApi.DTOs;
 using CatalogApi.Models;
@@ -14,12 +15,14 @@ namespace CatalogApi.Controllers
     public sealed class AuthController : ControllerBase
     {
         private readonly IUnitOfWork _unitOfWork;
-        private readonly JwtTokenService _jwt;
+        private readonly IJwtTokenService _jwt;
+        private readonly IPasswordHasher _passwordHasher;
 
-        public AuthController(IUnitOfWork unitOfWork, JwtTokenService jwt)
+        public AuthController(IUnitOfWork unitOfWork, IJwtTokenService jwt, IPasswordHasher passwordHasher)
         {
             _unitOfWork = unitOfWork;
             _jwt = jwt;
+            _passwordHasher = passwordHasher;
         }
 
         [HttpPost("login")]
@@ -31,7 +34,7 @@ namespace CatalogApi.Controllers
                 .Query()
                 .FirstOrDefault(u => u.Username == request.Username);
 
-            if (user == null || !MatchesPassword(user, request.Password))
+            if (user == null || !_passwordHasher.Verify(request.Password, user.PasswordHash))
             {
                 return Unauthorized(new { message = "Credenciales inválidas" });
             }
@@ -42,11 +45,6 @@ namespace CatalogApi.Controllers
                 Username = user.Username,
                 Role = user.Role,
             });
-        }
-
-        private static bool MatchesPassword(ApplicationUser user, string password)
-        {
-            return SeedData.HashPassword(password) == user.PasswordHash;
         }
     }
 }

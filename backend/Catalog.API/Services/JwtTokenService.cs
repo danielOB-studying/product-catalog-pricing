@@ -7,17 +7,18 @@ using Microsoft.IdentityModel.Tokens;
 namespace CatalogApi.Services
 {
     /// <summary>Genera el token JWT para autenticación del backoffice.</summary>
-    public sealed class JwtTokenService
+    public sealed class JwtTokenService : IJwtTokenService
     {
-        private const string Issuer = "Catalog.API";
-        private const string Audience = "catalog-backoffice";
-
         private readonly SymmetricSecurityKey _signingKey;
+        private readonly string _issuer;
+        private readonly string _audience;
         private readonly int _expirationMinutes;
 
         public JwtTokenService(IConfiguration config)
         {
             _signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(config["JWT:Key"]!));
+            _issuer = config["JWT:Issuer"] ?? "Catalog.API";
+            _audience = config["JWT:Audience"] ?? "catalog-backoffice";
             _expirationMinutes = config.GetValue("JWT:ExpirationMinutes", 480);
         }
 
@@ -32,8 +33,8 @@ namespace CatalogApi.Services
             };
 
             var token = new JwtSecurityToken(
-                issuer: Issuer,
-                audience: Audience,
+                issuer: _issuer,
+                audience: _audience,
                 claims: claims,
                 notBefore: DateTime.UtcNow,
                 expires: DateTime.UtcNow.AddMinutes(_expirationMinutes),

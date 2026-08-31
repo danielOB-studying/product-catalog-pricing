@@ -32,7 +32,7 @@ namespace CatalogApi.Services
                     return await response.Content.ReadFromJsonAsync<PricingCalculationResult>();
                 }
 
-                _logger.LogWarning("Pricing.API respondió con status {(int)} en /api/pricing/calculate", (int)response.StatusCode);
+                _logger.LogWarning("Pricing.API respondió con status {StatusCode} en /api/pricing/calculate", (int)response.StatusCode);
             }
             catch (Exception ex)
             {
