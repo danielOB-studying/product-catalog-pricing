@@ -1,0 +1,7 @@
+﻿LOGIN OK
+CATEGORIES OK (3)
+PRODUCTS OK (6)
+ELEC-001: base=89.99 final=76.49 desc=15.0 | HOGAR-001: base=59.5 final=50.58 desc=15.0 | OFIC-002: base=4.75 final=3.80 desc=20.0 | HOGAR-002: base=129.99 final=110.49 desc=15.0 | OFIC-001: base=249.0 final=211.65 desc=15.0 | ELEC-002: base=199.0 final=169.15 desc=15.0
+RULES OK (4)
+CALC OK final=85.0 discount=15.0
+RBAC OK: viewer bloqueado
